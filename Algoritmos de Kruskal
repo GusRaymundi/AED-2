@@ -1,0 +1,90 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_VERTICES 20
+#define MAX_ARESTAS 10000
+
+typedef struct {
+    int origem, destino, peso;
+} Aresta;
+
+typedef struct {
+    int pai, rank;
+} Subset;
+
+Aresta arestas[MAX_ARESTAS];
+Subset subsets[MAX_VERTICES];
+int V, A;
+
+int comparar_arestas(const void* a, const void* b) {
+    Aresta* aa = (Aresta*) a;
+    Aresta* bb = (Aresta*) b;
+    return aa->peso - bb->peso;
+}
+
+int encontrar(Subset subsets[], int i) {
+    if (subsets[i].pai != i) {
+        subsets[i].pai = encontrar(subsets, subsets[i].pai);
+    }
+    return subsets[i].pai;
+}
+
+void unir(Subset subsets[], int x, int y) {
+    int raiz_x = encontrar(subsets, x);
+    int raiz_y = encontrar(subsets, y);
+    if (subsets[raiz_x].rank < subsets[raiz_y].rank) {
+        subsets[raiz_x].pai = raiz_y;
+    } else if (subsets[raiz_x].rank > subsets[raiz_y].rank) {
+        subsets[raiz_y].pai = raiz_x;
+    } else {
+        subsets[raiz_y].pai = raiz_x;
+        subsets[raiz_x].rank++;
+    }
+}
+
+void kruskal() {
+    Aresta resultado[V];
+    int i, j, k;
+    j = 0;
+    k = 0;
+    qsort(arestas, A, sizeof(Aresta), comparar_arestas);
+    for (i = 0; i < V; i++) {
+        subsets[i].pai = i;
+        subsets[i].rank = 0;
+    }
+    while (j < V - 1 && k < A) {
+        Aresta aresta = arestas[k++];
+        int raiz_origem = encontrar(subsets, aresta.origem);
+        int raiz_destino = encontrar(subsets, aresta.destino);
+        if (raiz_origem != raiz_destino) {
+            resultado[j++] = aresta;
+            unir(subsets, raiz_origem, raiz_destino);
+        }
+    }
+    printf("\nArestas selecionadas na árvore geradora minima:\n");
+    printf("(Origem,Destino) -> tamanho\n");
+    for (i = 0; i < j; i++) {
+        printf("(%d, %d) -> %d\n", resultado[i].origem, resultado[i].destino, resultado[i].peso);
+    }
+}
+
+int main() {
+    int i;
+    printf("Entre com o número de vértices: ");
+    scanf("%d", &V);
+    printf("Entre com o número de arestas: ");
+    scanf("%d", &A);
+    printf("Entre com as arestas:\n");
+    for (i = 0; i < A; i++) {
+        printf("\fAdicione a %dª aresta\n\n", i+1);
+        printf("Digite a Origem: ");
+        scanf("%d", &arestas[i].origem);
+        printf("Digite o Destino: ");
+        scanf("%d", &arestas[i].destino);
+        printf("Digite o tamanho: ");
+        scanf("%d", &arestas[i].peso);
+    }
+    kruskal();
+    return 0;
+}
