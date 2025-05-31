@@ -1,0 +1,168 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <limits.h>
+
+#define MAX_VERTICES 20
+
+// Estrutura do grafo
+typedef struct Graph {
+    int V;
+    int A;
+    int **Adj;
+    int *dist;
+    int *parent;
+} Graph;
+
+// Funções
+Graph *addArestas(Graph *G, int v1, int v2, int value, int size);
+Graph initGraph(Graph *G);
+void dijkstra(Graph *G, int src);
+void printGraph(Graph *G);
+void freeGraph(Graph *G);
+void printPath(Graph *G, int v);
+
+int main() {
+    int v1 = 0, v2 = 0, value = 0;
+
+    // Alocação do grafo
+    Graph *G = (Graph *)malloc(sizeof(Graph));
+
+    // Entrada de vértices e arestas
+    printf("Escreva o numero de vertices (máximo 20) e arestas: ");
+    scanf("%d %d", &G->V, &G->A);
+
+    if (G->V > MAX_VERTICES) {
+        printf("Erro: o número máximo de vértices permitidos é %d.\n", MAX_VERTICES);
+        free(G);
+        return 1;
+    }
+
+    // Aloca memória
+    G->Adj = (int **)malloc(sizeof(int *) * G->V);
+    G->dist = (int *)malloc(sizeof(int) * G->V);
+    G->parent = (int *)malloc(sizeof(int) * G->V);
+    
+    // Inicializa e preenche o grafo
+    initGraph(G);
+    addArestas(G, v1, v2, value, G->A);
+
+    // Origem para Dijkstra
+    int src;
+    printf("Escolha o vertice de origem para o algoritmo de Dijkstra: ");
+    scanf("%d", &src);
+
+    dijkstra(G, src);
+    printGraph(G);
+
+    // Caminho mínimo até um destino
+    int destino;
+    printf("Escolha o vertice de destino para exibir o caminho minimo: ");
+    scanf("%d", &destino);
+
+    if (G->dist[destino] == INT_MAX) {
+        printf("Nao existe caminho de %d até %d.\n", src, destino);
+    } else {
+        printf("Caminho minimo de %d até %d (distancia %d):\n", src, destino, G->dist[destino]);
+        printPath(G, destino);
+        printf("\n");
+    }
+
+    freeGraph(G);
+    return 0;
+}
+
+// Adiciona arestas
+Graph *addArestas(Graph *G, int v1, int v2, int value, int size) {
+    for (int i = 0; i < size; i++) {
+        do {
+            printf("Digite os vertices da aresta e o seu valor (ex: 0 1 10): ");
+            scanf("%d %d %d", &v1, &v2, &value);
+        } while (v1 >= G->V || v2 >= G->V || v1 < 0 || v2 < 0 || value <= 0);
+
+        G->Adj[v1][v2] = value;
+        G->Adj[v2][v1] = value; // grafo não direcionado
+    }
+
+    return G;
+}
+
+// Inicializa o grafo com 0 nas adjacências
+Graph initGraph(Graph *G) {
+    for (int i = 0; i < G->V; i++) {
+        G->Adj[i] = (int *)malloc(sizeof(int) * G->V);
+    }
+    for (int u = 0; u < G->V; u++) {
+        for (int v = 0; v < G->V; v++) {
+            G->Adj[u][v] = 0;
+        }
+    }
+    return *G;
+}
+
+// Algoritmo de Dijkstra
+void dijkstra(Graph *G, int src) {
+    bool visited[G->V];
+    for (int i = 0; i < G->V; i++) {
+        G->dist[i] = INT_MAX;
+        G->parent[i] = -1;
+        visited[i] = false;
+    }
+    G->dist[src] = 0;
+
+    for (int count = 0; count < G->V - 1; count++) {
+        int u = -1;
+        for (int v = 0; v < G->V; v++) {
+            if (!visited[v] && (u == -1 || G->dist[v] < G->dist[u])) {
+                u = v;
+            }
+        }
+
+        visited[u] = true;
+
+        for (int v = 0; v < G->V; v++) {
+            if (!visited[v] && G->Adj[u][v] && G->dist[u] != INT_MAX && G->dist[u] + G->Adj[u][v] < G->dist[v]) {
+                G->dist[v] = G->dist[u] + G->Adj[u][v];
+                G->parent[v] = u;
+            }
+        }
+    }
+}
+
+// Imprime a matriz de adjacência e distâncias
+void printGraph(Graph *G) {
+    printf("\nMatriz de adjacencia:\n");
+    for (int i = 0; i < G->V; i++) {
+        for (int j = 0; j < G->V; j++) {
+            printf("%3d ", G->Adj[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("\nDistancias minimas a partir da origem:\n");
+    for (int i = 0; i < G->V; i++) {
+        printf("Vertice %d: %d\n", i, G->dist[i]);
+    }
+}
+
+// Caminho recursivo do destino até a origem
+void printPath(Graph *G, int v) {
+    if (G->parent[v] == -1) {
+        printf("%d", v);
+        return;
+    }
+    printPath(G, G->parent[v]);
+    printf(" -> %d", v);
+}
+
+// Liberação de memória
+void freeGraph(Graph *G) {
+    for (int i = 0; i < G->V; i++) {
+        free(G->Adj[i]);
+    }
+    free(G->Adj);
+    free(G->dist);
+    free(G->parent);
+    free(G);
+}
